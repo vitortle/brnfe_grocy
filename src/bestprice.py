@@ -2,6 +2,7 @@ from webbrowser import Chrome
 from selenium.webdriver import chrome
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.common.by import By
 from selenium import webdriver
 import time
 import requests
@@ -29,9 +30,8 @@ def save_captcha_images(imgs_src):
 def get_captcha(browser, iframes):
 # switch to captcha iframe
     browser.switch_to.frame(iframes[2])
-    images = browser.find_elements_by_tag_name('img') #find_elements_by_xpath('/html/body/div/div/div[2]/div[2]/div/table/tbody/tr[1]/td[1]/div/div[1]/img')
+    images = browser.find_elements(By.TAG_NAME, 'img') #browser.find_element("xpath",'/html/body/div/div/div[2]/div[2]/div/table/tbody/tr[1]/td[1]/div/div[1]/img')
     imgs_src = [image.get_attribute('src') for image in images]
-    # images[0].click()
     save_captcha_images(imgs_src)
 
 def scrap_data(cfe_key:str)-> str:
@@ -46,25 +46,25 @@ def scrap_data(cfe_key:str)-> str:
 
     # go to cfe site, type the key and click the button
     browser.get('https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx')
-    text_field = browser.find_elements_by_xpath('/html/body/div[1]/form/div[3]/div[2]/div[2]/table/tbody/tr[2]/td[2]/div[2]/div[1]/div[1]/div[1]/input')
-    text_field[0].click()
-    text_field[0].send_keys(cfe_key)
+    text_field = browser.find_element(By.XPATH,'/html/body/div[1]/form/div[3]/div[2]/div[2]/table/tbody/tr[2]/td[2]/div[2]/div[1]/div[1]/div[1]/input')
+    text_field.click()
+    text_field.send_keys(cfe_key)
 
     # find the 3 iframes:1-Im not a robot, 3- captcha
-    iframes = browser.find_elements_by_tag_name("iframe")
+    iframes = browser.find_elements(By.TAG_NAME, "iframe")
 
     # switch to not_a_robot iframe
     browser.switch_to.frame(iframes[0])
-    not_a_robot = browser.find_elements_by_xpath('/html/body')
+    not_a_robot = browser.find_element(By.XPATH,'/html/body')
     # click on not_a_robot
-    not_a_robot[0].click()
+    not_a_robot.click()
 
     # wait for the captcha to be solved
     input('Press enter when data is being showed!')
 
     #Capturing the data...
     data = browser.page_source
-    browser.close()
+    #browser.close()
     return data
     
 def get_cfe_data(data):
@@ -72,13 +72,14 @@ def get_cfe_data(data):
 
     date_div = soup.find('div', id='')
     date_span = date_div.find('span', id='conteudo_lblDataEmissao')
+    date = date_span.text
 
     cfeid_div = soup.find('div', id='divTelaImpressao')
     cfeid_span = cfeid_div.find('span', id='conteudo_lblNumeroCfe')
     cfeid = cfeid_span.text
 
     emitente_div = soup.find('div', id='DadosEmitenteContent')
-    name_span = emitente_div.find('span', id='conteudo_lblNomeFantasiaEmitente')
+    name_span = emitente_div.find('span', id='conteudo_lblNomeEmitente') #conteudo_lblNomeFantasiaEmitente
     name = name_span.text
 
     address_span = emitente_div.find('span', id='conteudo_lblEnderecoEmintente')
@@ -87,33 +88,36 @@ def get_cfe_data(data):
     city_span = emitente_div.find('span', id='conteudo_lblMunicipioEmitente')
     city = city_span.text
 
-    print(f'{cfeid=}, {name=}, {address=}, {city=}')
+    invoice_header = dict(cfeid=cfeid, purchase_date=date, place_name=name, address=address, city=city)
 
     table = soup.find('table', {'id': 'tableItens'})
     rows = table.find_all('tr')
 
-    keys = ['id', 'product_code', 'description', 'qtty', 'unit', 'unit_price', 'tr', 'total_price']
+    keys = ['id', 'product_code', 'description', 'qtty', 'unit', 'unit_price', 'tax', 'total_price']
     invoice_items = []
+    invoice_item = {}
     for row in rows[2::]:
         cells = row.find_all('td')
         print('='*20)
 
-        invoice_item = {}
-        if len(cells) == 2: # get line between items which keeps only the discounts
-            for key, value in zip(['include', 'value'], cells):
-                print(key, value.text)
-                print('_'*20)
-                invoice_item[key] = value.text.replace('\n','').strip()
-        else: # all item
+        if len(cells) > 2: # all item
             for key, value in zip(keys, cells):
                 print(value)
                 print('_'*20)
                 invoice_item[key] = value.text.replace('\n','').replace('X','').strip()
+            continue
+
+        if len(cells) == 2: # get line between items which keeps only the modifiers
+            for key, value in zip(['price_adjustment', 'adjustment_value'], cells):
+                print(key, value.text)
+                print('_'*20)
+                invoice_item[key] = value.text.replace('\n','').strip()
             
         invoice_items.append(invoice_item)
+        invoice_item = {}
 
-
-    return invoice_items
+    invoice = dict(header=invoice_header, items=invoice_items)
+    return invoice
 
 def main():
     coop_test = '35230257508426004599590005671911425513149074'
