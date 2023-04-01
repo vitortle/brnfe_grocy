@@ -2,3 +2,6 @@ selenium
 pandas
 BeautifulSoup4
 requests
+pymongo
+python-dotenv
+django==4.1.7

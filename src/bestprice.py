@@ -13,6 +13,7 @@ import os
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from database.database import SqliteDatabase
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -64,10 +65,15 @@ def scrap_data(cfe_key:str)-> str:
 
     #Capturing the data...
     data = browser.page_source
-    #browser.close()
+    browser.close()
     return data
     
 def get_cfe_data(data):
+    """
+        Returns a tuple of dicts:
+        (invoice_header, invoice_items)
+
+    """
     soup = BeautifulSoup(data, 'html.parser')
 
     date_div = soup.find('div', id='')
@@ -93,7 +99,7 @@ def get_cfe_data(data):
     table = soup.find('table', {'id': 'tableItens'})
     rows = table.find_all('tr')
 
-    keys = ['id', 'product_code', 'description', 'qtty', 'unit', 'unit_price', 'tax', 'total_price']
+    keys = ['item', 'product_code', 'description', 'qtty', 'unit', 'unit_price', 'tax', 'total_price']
     invoice_items = []
     invoice_item = {}
     for row in rows[2::]:
@@ -116,18 +122,27 @@ def get_cfe_data(data):
         invoice_items.append(invoice_item)
         invoice_item = {}
 
-    invoice = dict(header=invoice_header, items=invoice_items)
-    return invoice
+    return invoice_header,invoice_items
+
+def save_data(cfe_data):    
+    sqlite = SqliteDatabase()
+ 
+    idh = sqlite.insert_header(cfe_data[0])
+    idi = sqlite.insert_item(idh, cfe_data[1])
+    
+    print(f'Record ID {idh}, {idi} saved!')
 
 def main():
     coop_test = '35230257508426004599590005671911425513149074'
     sr_test = '35221245495694001276590008047580969276482206'
-
-    data = scrap_data(sr_test)
-    cfe_data = get_cfe_data(data)
-    print(cfe_data)
-
-    #database.save(data)
+    while True:
+        cfeid = input('Enter the CFEid: ')
+        if cfeid == 'exit':
+            break
+        data = scrap_data(cfeid)
+        cfe_data = get_cfe_data(data)
+        save_data(cfe_data)
+    
 
 if __name__ == '__main__':
     main()
