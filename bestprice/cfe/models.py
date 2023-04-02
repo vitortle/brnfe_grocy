@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 class Header(models.Model):
     cfeid = models.IntegerField()
+    access_key = models.CharField(max_length=50)
     purchase_date = models.DateTimeField()
     place_name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)

@@ -68,7 +68,7 @@ def scrap_data(cfe_key:str)-> str:
     browser.close()
     return data
     
-def get_cfe_data(data):
+def get_cfe_data(data, access_key):
     """
         Returns a tuple of dicts:
         (invoice_header, invoice_items)
@@ -94,7 +94,7 @@ def get_cfe_data(data):
     city_span = emitente_div.find('span', id='conteudo_lblMunicipioEmitente')
     city = city_span.text
 
-    invoice_header = dict(cfeid=cfeid, purchase_date=date, place_name=name, address=address, city=city)
+    invoice_header = dict(cfeid=cfeid, access_key=access_key, purchase_date=date, place_name=name, address=address, city=city)
 
     table = soup.find('table', {'id': 'tableItens'})
     rows = table.find_all('tr')
@@ -115,9 +115,8 @@ def get_cfe_data(data):
 
         if len(cells) == 2: # get line between items which keeps only the modifiers
             for key, value in zip(['price_adjustment', 'adjustment_value'], cells):
-                print(key, value.text)
                 print('_'*20)
-                invoice_item[key] = value.text.replace('\n','').strip()
+                invoice_item[key] = value.text.replace('\n','').strip().replace(' ','')
             
         invoice_items.append(invoice_item)
         invoice_item = {}
@@ -132,15 +131,42 @@ def save_data(cfe_data):
     
     print(f'Record ID {idh}, {idi} saved!')
 
+
+def get_cfe_data(cfe_key):
+    uf = cfe_key[0:2]
+    aamm = cfe_key[2:6]
+    cnpj = cfe_key[6:20]
+    modelo = cfe_key[20:22]
+    serie = cfe_key[22:31]
+    cfe = cfe_key[31:37]
+    aleat = cfe_key[37:43]
+    dv = cfe_key[43:45]
+    return dict (uf=uf, aamm=aamm, cnpj=cnpj, modelo=modelo, serie=serie, cfe=cfe, aleat=aleat, dv=dv)
+
+def modulo11(cfe_key_dict):
+    """
+    Returns the modulo11 of the cfe_key
+    param cfe_key_dict: dict with the cfe_key  (except the dv)
+    """
+    cfe_key = cfe_key_dict['uf'] + cfe_key_dict['aamm'] + cfe_key_dict['cnpj'] + cfe_key_dict['modelo'] + cfe_key_dict['serie'] + cfe_key_dict['cfe'] + cfe_key_dict['aleat']
+    sum = 0
+    for i, n in enumerate(cfe_key):
+        sum += int(n) * (i % 8 + 2)
+    dv = 11 - (sum % 11)
+    if dv > 9:
+        dv = 0
+    return dv
+
+
 def main():
     coop_test = '35230257508426004599590005671911425513149074'
     sr_test = '35221245495694001276590008047580969276482206'
     while True:
-        cfeid = input('Enter the CFEid: ')
-        if cfeid == 'exit':
+        access_key = input('Enter the CFEid: ')
+        if access_key == 'exit':
             break
-        data = scrap_data(cfeid)
-        cfe_data = get_cfe_data(data)
+        data = scrap_data(access_key)
+        cfe_data = get_cfe_data(data, access_key)
         save_data(cfe_data)
     
 

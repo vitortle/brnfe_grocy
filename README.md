@@ -9,3 +9,7 @@ $ mv geckodriver ~/.local/bin
 wget https://chromedriver.storage.googleapis.com/111.0.5563.64/chromedriver_linux64.zip
 unzip chromedriver_linux64.zip
 mv chromedriver /usr/bin/
+
+## 3- CFE manual 
+https://www.confaz.fazenda.gov.br/legislacao/arquivo-manuais/especificacao-tecnica-de-requisitos-2_24_04.pdf
+

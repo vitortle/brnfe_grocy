@@ -35,8 +35,8 @@ class SqliteDatabase():
     def insert_header(self, data:dict)-> int:
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
             cursor = conn.cursor()
-            query = "INSERT INTO cfe_header (cfeid, purchase_date, place_name, address, city) VALUES (?, ?, ?, ?, ?)"
-            cursor.execute(query, (data['cfeid'], convert_date(data['purchase_date']), data['place_name'], data['address'], data['city']))
+            query = "INSERT INTO cfe_header (cfeid, access_key, purchase_date, place_name, address, city) VALUES (?, ?, ?, ?, ?, ?)"
+            cursor.execute(query, (data['cfeid'], data['access_key'], convert_date(data['purchase_date']), data['place_name'], data['address'], data['city']))
             conn.commit()
         return cursor.lastrowid
 
@@ -44,7 +44,7 @@ class SqliteDatabase():
     def insert_item(self, purchase_id, data_list:dict)-> int:
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
             cursor = conn.cursor()
-            query = "INSERT INTO cfe_item (item, product_code, description, qtty, unit, unit_price, tax, total_price, purchase_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            query = "INSERT INTO cfe_item (item, product_code, description, qtty, unit, unit_price, tax, total_price, price_adjustment, adjustment_value, purchase_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             for data in data_list:
                 cursor.execute(query, 
                                     (
@@ -56,6 +56,8 @@ class SqliteDatabase():
                                         data['unit_price'].replace(',','.'), 
                                         data['tax'].replace(',','.').replace('(','').replace(')',''),
                                         data['total_price'].replace(',','.'), 
+                                        data['price_adjustment'],
+                                        data['adjustment_value'].replace(',','.'),
                                         purchase_id
                                     )
                                 )
