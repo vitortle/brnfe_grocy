@@ -51,36 +51,16 @@ class SqliteDatabase():
 
     def insert_item(self, header_id, data_list:list)-> int:
         data = data_list[0]
-        print(data['item'],
-                                        data['description'],
-                                        data['qtty'],
-                                        data['unit'],
-                                        data['liquid_price'],
-                                        data['aditional_info'],
-                                        data['product_code'],
-                                        data['gtin_code'],
-                                        data['ncm_code'],
-                                        data['unit_price'],
-                                        data['gross_price'],
-                                        data['calc_rule'],
-                                        data['discount'],
-                                        data['icms_value'],
-                                        data['pis_value'],
-                                        data['pis_st_value'],
-                                        data['cofins_value'],
-                                        data['confins_st_value'], 
-                                        data['issqn_value'],
-                                        data['total_tax_value'],
-                                        header_id)
-
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
             cursor = conn.cursor()
-            query = "INSERT INTO cfe_item ('item', 'description', 'qtty', 'unit', 'liquid_price',"
-            "'aditional_info', 'product_code', 'gtin_code',"
-            "'ncm_code','unit_price', 'gross_price', 'calc_rule', 'discount',"
-            "'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value',"
-            "'issqn_value', 'total_tax_value', 'purchase_id')"
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            query = """INSERT INTO cfe_item ('item', 'description', 'qtty', 'unit', 'liquid_price',
+            'aditional_info', 'product_code', 'gtin_code',
+            'ncm_code','unit_price', 'gross_price', 'calc_rule', 'discount',
+            'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value',
+            'issqn_value', 'total_tax_value', 'purchase_id')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
             for data in data_list:
                 cursor.execute(query, 
                                     (

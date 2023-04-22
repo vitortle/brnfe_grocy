@@ -43,6 +43,7 @@ def scrap_data(cfe_key:str)-> str:
     options = ChromeOptions()
     options.add_argument('--ignore-ssl-errors=yes')
     options.add_argument('--ignore-certificate-errors') 
+   
     # options.add_argument("--headless")
 
     options.add_experimental_option("detach", True)
@@ -128,10 +129,7 @@ def get_cfe_item_data(data)-> dict:
     rows = table.find_all('tr')
     for row in rows[1:]:
         cells = row.find_all('td')
-        print('='*20)
         for key, value in zip(keys, cells):
-            print(value)
-            print('_'*20)
             item[key] = value.text.replace('\n','').replace('X','').strip()
 
         items.append(item)
@@ -193,10 +191,10 @@ def main():
         access_key = input('Enter the CFEid: ')
         if access_key == 'exit':
             break
-        data = scrap_data_test(access_key)
-        #print("*****", data)
-        cfe_header_data = get_cfe_header_data(data, access_key)
-        cfe_item_data = get_cfe_item_data(data)
+        header_data, item_data = scrap_data(access_key) #_test
+
+        cfe_header_data = get_cfe_header_data(header_data, access_key)
+        cfe_item_data = get_cfe_item_data(item_data)
 
         header_data_adjusted = adjust_cfe_header_data(cfe_header_data)
         item_data_adjusted = adjust_cfe_item_data(cfe_item_data)
