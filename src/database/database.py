@@ -14,6 +14,14 @@ def convert_date(date:str)-> str:
     format_str = '%d/%m/%Y - %H:%M:%S' # The format
     return datetime.datetime.strptime(date, format_str).strftime('%Y-%m-%d %H:%M:%S')
 
+def save_data(cfe_header_data, cfe_item_data):
+    sqlite = SqliteDatabase()
+    
+    idh = sqlite.insert_header(cfe_header_data)
+    idi = sqlite.insert_item(idh, cfe_item_data)
+    
+    print(f'Record ID {idh}, {idi} saved!')
+
 class MongoDatabase():
     def __init__(self):
         client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@bestprice.uizfzp3.mongodb.net/?retryWrites=true&w=majority", 
@@ -36,29 +44,67 @@ class SqliteDatabase():
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
             cursor = conn.cursor()
             query = "INSERT INTO cfe_header (cfeid, access_key, purchase_date, place_name, address, city) VALUES (?, ?, ?, ?, ?, ?)"
-            cursor.execute(query, (data['cfeid'], data['access_key'], convert_date(data['purchase_date']), data['place_name'], data['address'], data['city']))
+            cursor.execute(query, (data['cfeid'], data['access_key'], data['purchase_date'], data['place_name'], data['address'], data['city']))
             conn.commit()
         return cursor.lastrowid
 
 
-    def insert_item(self, purchase_id, data_list:dict)-> int:
+    def insert_item(self, header_id, data_list:list)-> int:
+        data = data_list[0]
+        print(data['item'],
+                                        data['description'],
+                                        data['qtty'],
+                                        data['unit'],
+                                        data['liquid_price'],
+                                        data['aditional_info'],
+                                        data['product_code'],
+                                        data['gtin_code'],
+                                        data['ncm_code'],
+                                        data['unit_price'],
+                                        data['gross_price'],
+                                        data['calc_rule'],
+                                        data['discount'],
+                                        data['icms_value'],
+                                        data['pis_value'],
+                                        data['pis_st_value'],
+                                        data['cofins_value'],
+                                        data['confins_st_value'], 
+                                        data['issqn_value'],
+                                        data['total_tax_value'],
+                                        header_id)
+
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
             cursor = conn.cursor()
-            query = "INSERT INTO cfe_item (item, product_code, description, qtty, unit, unit_price, tax, total_price, price_adjustment, adjustment_value, purchase_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            query = "INSERT INTO cfe_item ('item', 'description', 'qtty', 'unit', 'liquid_price',"
+            "'aditional_info', 'product_code', 'gtin_code',"
+            "'ncm_code','unit_price', 'gross_price', 'calc_rule', 'discount',"
+            "'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value',"
+            "'issqn_value', 'total_tax_value', 'purchase_id')"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             for data in data_list:
                 cursor.execute(query, 
                                     (
-                                        data['item'], 
-                                        data['product_code'], 
-                                        data['description'], 
-                                        data['qtty'].replace(',','.'), 
-                                        data['unit'], 
-                                        data['unit_price'].replace(',','.'), 
-                                        data['tax'].replace(',','.').replace('(','').replace(')',''),
-                                        data['total_price'].replace(',','.'), 
-                                        data['price_adjustment'],
-                                        data['adjustment_value'].replace(',','.'),
-                                        purchase_id
+                                        data['item'],
+                                        data['description'],
+                                        data['qtty'],
+                                        data['unit'],
+                                        data['liquid_price'],
+                                        data['aditional_info'],
+                                        data['product_code'],
+                                        data['gtin_code'],
+                                        data['ncm_code'],
+                                        data['unit_price'],
+                                        data['gross_price'],
+                                        data['calc_rule'],
+                                        data['discount'],
+                                        data['icms_value'],
+                                        data['pis_value'],
+                                        data['pis_st_value'],
+                                        data['cofins_value'],
+                                        data['confins_st_value'], 
+                                        data['issqn_value'],
+                                        data['total_tax_value'],
+                                        header_id
                                     )
                                 )
                 conn.commit()

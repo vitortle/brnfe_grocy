@@ -13,7 +13,7 @@ import os
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from database.database import SqliteDatabase
+from database import database
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -34,6 +34,10 @@ def get_captcha(browser, iframes):
     images = browser.find_elements(By.TAG_NAME, 'img') #browser.find_element("xpath",'/html/body/div/div/div[2]/div[2]/div/table/tbody/tr[1]/td[1]/div/div[1]/img')
     imgs_src = [image.get_attribute('src') for image in images]
     save_captcha_images(imgs_src)
+
+def scrap_data_test(cfe_key:str)-> str:
+     with open('test_data.txt', 'r') as file:
+        return file.read().rstrip()
 
 def scrap_data(cfe_key:str)-> str:
     options = ChromeOptions()
@@ -63,76 +67,101 @@ def scrap_data(cfe_key:str)-> str:
     # wait for the captcha to be solved
     input('Press enter when data is being showed!')
 
-    #Capturing the data...
-    data = browser.page_source
-    browser.close()
-    return data
-    
-def get_cfe_data(data, access_key):
-    """
-        Returns a tuple of dicts:
-        (invoice_header, invoice_items)
+    # click on Detail button
+    detail_button = browser.find_element(By.ID,'conteudo_btnDetalhe')
+    detail_button.click()
 
-    """
+    # click on emitente
+    detail_button = browser.find_element(By.ID,'conteudo_tabEmitente')
+    detail_button.click()
+    
+    # Capturing the data for header...
+    header_data = browser.page_source
+
+    # click on Produtos e Servicos button
+    detail_button = browser.find_element(By.ID,'conteudo_tabProdutoServico')
+    detail_button.click()
+    
+    # Capturing the data for items...
+    item_data = browser.page_source
+
+    # browser.close()
+
+    return (header_data, item_data)
+
+def get_cfe_header_data(data, access_key)-> dict:
     soup = BeautifulSoup(data, 'html.parser')
 
-    date_div = soup.find('div', id='')
-    date_span = date_div.find('span', id='conteudo_lblDataEmissao')
-    date = date_span.text
-
-    cfeid_div = soup.find('div', id='divTelaImpressao')
-    cfeid_span = cfeid_div.find('span', id='conteudo_lblNumeroCfe')
-    cfeid = cfeid_span.text
-
-    emitente_div = soup.find('div', id='DadosEmitenteContent')
-    name_span = emitente_div.find('span', id='conteudo_lblNomeEmitente') #conteudo_lblNomeFantasiaEmitente
-    name = name_span.text
-
-    address_span = emitente_div.find('span', id='conteudo_lblEnderecoEmintente')
-    address = address_span.text
+    date = soup.find('span', id='conteudo_lblDataEmissao').text
+    cfeid = soup.find('span', id='conteudo_lblNumeroCfe').text
     
-    city_span = emitente_div.find('span', id='conteudo_lblMunicipioEmitente')
-    city = city_span.text
+    name = soup.find('span', id='conteudo_lblEmitenteDadosNomeFantasia').text
+    cnpj = soup.find('span', id='conteudo_lblEmitenteDadosEmitenteCnpj').text
+    ie = soup.find('span', id='conteudo_lblEmitenteDadosInscricaoMunicipal').text
+    address = soup.find('span', id='conteudo_lblEmitenteDadosEndereco').text
+    city = soup.find('span', id='conteudo_lblEmitenteDadosMunicipio').text
 
-    invoice_header = dict(cfeid=cfeid, access_key=access_key, purchase_date=date, place_name=name, address=address, city=city)
+    header = dict(cfeid=cfeid, access_key=access_key, purchase_date=date, place_name=name, address=address, city=city)
+    #TODO add cnpj and ie to database
+    return header
 
-    table = soup.find('table', {'id': 'tableItens'})
+def get_cfe_item_data(data)-> dict:
+    items = []
+    item = {}
+    soup = BeautifulSoup(data, 'html.parser')
+ 
+    keys = ['item', 'description', 'qtty', 'unit', 'liquid_price', 'aditional_info', 'product_code', 'gtin_code',
+            'ncm_code', 'Código Especificador da Substituição Tributária', 'cfop', 'unit_price', 'gross_price', 'calc_rule', 'discount',
+            'Outras Despesas Acessórias', 'Rateio do Desconto Sobre Subtotal', 'Rateio do Acréscimo Sobre Subtotal',
+            'Observações Fisco', 'Origem da Mercadoria', 'Tributação do ICMS', 'Cód. de Situação da Operação - Simples Nacional',
+            'Alíquota Efetiva', 'icms_value', 'Código de Situação Tributária PIS', 'Valor da Base de Cálculo do PIS', 'Alíquota do PIS',
+            'Quantidade Vendida PIS', 'Alíquota do PIS', 'pis_value', 
+            'Valor da Base de Cálculo do PIS ST', 'Alíquota do PIS ST', 'Quantidade Vendida PIS ST', 'Alíquota do PIS ST', 'pis_st_value',
+            'Código de Situação Tributária da COFINS', 'Valor da Base de Cálculo da COFINS', 'Alíquota da COFINS', 'cofins_value', 'Quantidade Vendida COFINS',	
+            'Alíquota da COFINS', 'Valor da Base de Cálculo da COFINS ST', 'Alíquota da COFINS ST', 'confins_st_value', 'Quantidade Vendida COFINS ST',	
+            'Alíquota da COFINS ST', 'Valor de Deduções para ISSQN', 'Valor da Base de Cálculo do ISSQN', 'Alíquota do ISSQN', 'issqn_value',	
+            'Item da Lista de Serviços', 'Código do Município do Fato Gerador do ISSQN', 'Código de Tributação pelo ISSQN do Município',	
+            'Natureza da Operação de ISSQN', 'Incentivo Fiscal do ISSQN', 'total_tax_value'
+    ]
+
+    table = soup.find('table', {'id': 'conteudo_grvProdutosServicos'})
     rows = table.find_all('tr')
-
-    keys = ['item', 'product_code', 'description', 'qtty', 'unit', 'unit_price', 'tax', 'total_price']
-    invoice_items = []
-    invoice_item = {}
-    for row in rows[2::]:
+    for row in rows[1:]:
         cells = row.find_all('td')
         print('='*20)
+        for key, value in zip(keys, cells):
+            print(value)
+            print('_'*20)
+            item[key] = value.text.replace('\n','').replace('X','').strip()
 
-        if len(cells) > 2: # all item
-            for key, value in zip(keys, cells):
-                print(value)
-                print('_'*20)
-                invoice_item[key] = value.text.replace('\n','').replace('X','').strip()
-            continue
+        items.append(item)
+        item = {}
+    return items
 
-        if len(cells) == 2: # get line between items which keeps only the modifiers
-            for key, value in zip(['price_adjustment', 'adjustment_value'], cells):
-                print('_'*20)
-                invoice_item[key] = value.text.replace('\n','').strip().replace(' ','')
-            
-        invoice_items.append(invoice_item)
-        invoice_item = {}
+def adjust_cfe_item_data(cfe_item_data):
+    #keys = ['item', 'description', 'qtty', 'unit', 'product_code', 'unit_price', 'tax', 'total_price']
+    keys = ['item', 'description', 'qtty', 'unit','liquid_price', 'aditional_info', 'product_code', 'gtin_code',
+            'ncm_code','unit_price', 'gross_price', 'calc_rule', 'discount', 
+            'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value', 'issqn_value', 'total_tax_value'
+    ]
+    cfe_data = []
+    for line in cfe_item_data:
+        cfe_line = {}
+        for key in keys:
+            value = line[key]
+            if key in ['qtty', 'liquid_price', 'unit_price', 'gross_price', 'discount', 
+                    'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value', 
+                    'issqn_value', 'total_tax_value'
+                    ]:
+                value = float(value.replace('Não Informado', '0.00').replace(',','.'))
+            cfe_line[key] = value
+        cfe_data.append(cfe_line)
+    return cfe_data
 
-    return invoice_header,invoice_items
+def adjust_cfe_header_data(cfe_header_data):
+    return cfe_header_data
 
-def save_data(cfe_data):    
-    sqlite = SqliteDatabase()
- 
-    idh = sqlite.insert_header(cfe_data[0])
-    idi = sqlite.insert_item(idh, cfe_data[1])
-    
-    print(f'Record ID {idh}, {idi} saved!')
-
-
-def get_cfe_data(cfe_key):
+def get_cfe_dict(cfe_key):
     uf = cfe_key[0:2]
     aamm = cfe_key[2:6]
     cnpj = cfe_key[6:20]
@@ -157,7 +186,6 @@ def modulo11(cfe_key_dict):
         dv = 0
     return dv
 
-
 def main():
     coop_test = '35230257508426004599590005671911425513149074'
     sr_test = '35221245495694001276590008047580969276482206'
@@ -165,10 +193,17 @@ def main():
         access_key = input('Enter the CFEid: ')
         if access_key == 'exit':
             break
-        data = scrap_data(access_key)
-        cfe_data = get_cfe_data(data, access_key)
-        save_data(cfe_data)
-    
+        data = scrap_data_test(access_key)
+        #print("*****", data)
+        cfe_header_data = get_cfe_header_data(data, access_key)
+        cfe_item_data = get_cfe_item_data(data)
+
+        header_data_adjusted = adjust_cfe_header_data(cfe_header_data)
+        item_data_adjusted = adjust_cfe_item_data(cfe_item_data)
+        database.save_data(header_data_adjusted, item_data_adjusted)
+        print(header_data_adjusted)
+        print('='*80)
+        print(item_data_adjusted)
 
 if __name__ == '__main__':
     main()
