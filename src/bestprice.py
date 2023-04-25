@@ -86,7 +86,7 @@ def scrap_data(cfe_key:str)-> str:
     # Capturing the data for items...
     item_data = browser.page_source
 
-    # browser.close()
+    browser.close()
 
     return (header_data, item_data)
 
@@ -96,7 +96,7 @@ def get_cfe_header_data(data, access_key)-> dict:
     date = soup.find('span', id='conteudo_lblDataEmissao').text
     cfeid = soup.find('span', id='conteudo_lblNumeroCfe').text
     
-    name = soup.find('span', id='conteudo_lblEmitenteDadosNomeFantasia').text
+    name = soup.find('span', id='conteudo_lblEmitenteDadosNome').text
     cnpj = soup.find('span', id='conteudo_lblEmitenteDadosEmitenteCnpj').text
     ie = soup.find('span', id='conteudo_lblEmitenteDadosInscricaoMunicipal').text
     address = soup.find('span', id='conteudo_lblEmitenteDadosEndereco').text
