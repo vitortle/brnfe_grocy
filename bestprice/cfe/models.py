@@ -13,17 +13,28 @@ class Header(models.Model):
         return f"{self.purchase_date} - {self.place_name}"
 
 class Item(models.Model):
-    purchase = models.ForeignKey(Header, on_delete=models.CASCADE, related_name='items')
     item = models.IntegerField()
     product_code = models.CharField(max_length=20)
     description = models.CharField(max_length=50)
     qtty = models.FloatField()
     unit = models.CharField(max_length=10)
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
-    tax = models.DecimalField(max_digits=6, decimal_places=2)
-    total_price = models.DecimalField(max_digits=6, decimal_places=2)
-    price_adjustment = models.CharField(max_length=20, null=True)
-    adjustment_value = models.DecimalField(max_digits=6, decimal_places=2, default=0, null=True)
-
+    gross_price = models.DecimalField(max_digits=10, decimal_places=5)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    total_tax_value = models.DecimalField(max_digits=10, decimal_places=5)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    discount = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    purchase = models.ForeignKey(Header, models.DO_NOTHING)
+    liquid_price = models.DecimalField(max_digits=10, decimal_places=5)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    aditional_info = models.TextField(blank=True, null=True)
+    gtin_code = models.CharField(max_length=20, blank=True, null=True)
+    ncm_code = models.CharField(max_length=10, blank=True, null=True)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    calc_rule = models.CharField(max_length=1, blank=True, null=True)
+    icms_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    pis_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    pis_st_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    cofins_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    confins_st_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    issqn_value = models.DecimalField(max_digits=10, decimal_places=5, blank=True, null=True)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
+    purchase = models.ForeignKey(Header, on_delete=models.CASCADE, related_name='items')
+   
     def __str__(self):
-        return f"{self.product_code} - {self.description}"
+        return f"{self.gtin_code} - {self.description}"

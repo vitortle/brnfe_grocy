@@ -102,7 +102,7 @@ def get_cfe_header_data(data, access_key)-> dict:
     address = soup.find('span', id='conteudo_lblEmitenteDadosEndereco').text
     city = soup.find('span', id='conteudo_lblEmitenteDadosMunicipio').text
 
-    header = dict(cfeid=cfeid, access_key=access_key, purchase_date=date, place_name=name, address=address, city=city)
+    header = dict(cfeid=cfeid, access_key=access_key.replace(' ',''), purchase_date=date, place_name=name, address=address, city=city)
     #TODO add cnpj and ie to database
     return header
 
@@ -147,6 +147,10 @@ def adjust_cfe_item_data(cfe_item_data):
         cfe_line = {}
         for key in keys:
             value = line[key]
+
+            if key == 'gtin_code':
+                value = value[1:] if value.startswith('0') else value
+
             if key in ['qtty', 'liquid_price', 'unit_price', 'gross_price', 'discount', 
                     'icms_value', 'pis_value', 'pis_st_value', 'cofins_value', 'confins_st_value', 
                     'issqn_value', 'total_tax_value'
