@@ -2,25 +2,13 @@ import pymongo
 import dotenv
 import os
 import sqlite3
-import datetime
+
 
 
 dotenv.load_dotenv()
 username = os.getenv('USERNAME')
 password = os.getenv('PASSWD')
 
-def convert_date(date:str)-> str:
-    """Converts date from dd/mm/yyyy to yyyy-mm-dd"""
-    format_str = '%d/%m/%Y - %H:%M:%S' # The format
-    return datetime.datetime.strptime(date, format_str).strftime('%Y-%m-%d %H:%M:%S')
-
-def save_data(cfe_header_data, cfe_item_data):
-    sqlite = SqliteDatabase()
-    
-    idh = sqlite.insert_header(cfe_header_data)
-    idi = sqlite.insert_item(idh, cfe_item_data)
-    
-    print(f'Record ID {idh}, {idi} saved!')
 
 class MongoDatabase():
     def __init__(self):
@@ -39,6 +27,16 @@ class MongoDatabase():
     
 
 class SqliteDatabase():
+
+    def exists_key(self, key) -> bool:
+        rows = []
+        with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT count(*) FROM cfe_header where access_key='{key}'")
+            rows = cursor.fetchall()
+            print('***',key, rows[0][0] == 0)
+        return False if rows[0][0] == 0 else True
+
 
     def insert_header(self, data:dict)-> int:
         with sqlite3.connect('/home/rogerio/sources/bestprice/bestprice/db.sqlite3') as conn:

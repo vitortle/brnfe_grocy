@@ -1,6 +1,3 @@
-from webbrowser import Chrome
-from selenium.webdriver import chrome
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium import webdriver
@@ -10,9 +7,8 @@ import shutil
 import uuid
 import os
 
-import pandas as pd
 from bs4 import BeautifulSoup
-
+from selenium.common.exceptions import NoSuchElementException
 from database import database
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -35,15 +31,27 @@ def get_captcha(browser, iframes):
     imgs_src = [image.get_attribute('src') for image in images]
     save_captcha_images(imgs_src)
 
-def scrap_data_test(cfe_key:str)-> str:
-     with open('test_data.txt', 'r') as file:
-        return file.read().rstrip()
+
+
+class Scrape:
+    def __init__(self, browser):
+        self.browser = browser
+
+    def click(self, xpath):
+        html_object = self.browser.find_element(By.XPATH,xpath)
+        html_object.click()
+
+    def send_keys(self, xpath, keys):
+        html_object = self.browser.find_element(By.XPATH,xpath)
+        html_object.send_keys(keys)
+
 
 def scrap_data(cfe_key:str)-> str:
     options = ChromeOptions()
     options.add_argument('--ignore-ssl-errors=yes')
     options.add_argument('--ignore-certificate-errors') 
    
+    # for os with no GUI
     # options.add_argument("--headless")
 
     options.add_experimental_option("detach", True)
@@ -70,6 +78,8 @@ def scrap_data(cfe_key:str)-> str:
 
     # click on Detail button
     detail_button = browser.find_element(By.ID,'conteudo_btnDetalhe')
+   
+        
     detail_button.click()
 
     # click on emitente
@@ -91,18 +101,23 @@ def scrap_data(cfe_key:str)-> str:
     return (header_data, item_data)
 
 def get_cfe_header_data(data, access_key)-> dict:
-    soup = BeautifulSoup(data, 'html.parser')
+    try:
+        soup = BeautifulSoup(data, 'html.parser')
 
-    date = soup.find('span', id='conteudo_lblDataEmissao').text
-    cfeid = soup.find('span', id='conteudo_lblNumeroCfe').text
-    
-    name = soup.find('span', id='conteudo_lblEmitenteDadosNome').text
-    cnpj = soup.find('span', id='conteudo_lblEmitenteDadosEmitenteCnpj').text
-    ie = soup.find('span', id='conteudo_lblEmitenteDadosInscricaoMunicipal').text
-    address = soup.find('span', id='conteudo_lblEmitenteDadosEndereco').text
-    city = soup.find('span', id='conteudo_lblEmitenteDadosMunicipio').text
+        date = soup.find('span', id='conteudo_lblDataEmissao').text
+        cfeid = soup.find('span', id='conteudo_lblNumeroCfe').text
+        
+        name = soup.find('span', id='conteudo_lblEmitenteDadosNome').text
+        cnpj = soup.find('span', id='conteudo_lblEmitenteDadosEmitenteCnpj').text
+        ie = soup.find('span', id='conteudo_lblEmitenteDadosInscricaoMunicipal').text
+        address = soup.find('span', id='conteudo_lblEmitenteDadosEndereco').text
+        city = soup.find('span', id='conteudo_lblEmitenteDadosMunicipio').text
 
-    header = dict(cfeid=cfeid, access_key=access_key.replace(' ',''), purchase_date=date, place_name=name, address=address, city=city)
+        header = dict(cfeid=cfeid, access_key=access_key.replace(' ',''), purchase_date=date, place_name=name, address=address, city=city)
+    except AttributeError as ex:
+        print(ex)
+    except Exception as ex:
+        print(f'Unexpected exception {ex} !')
     #TODO add cnpj and ie to database
     return header
 
@@ -189,23 +204,31 @@ def modulo11(cfe_key_dict):
     return dv
 
 def main():
-    coop_test = '35230257508426004599590005671911425513149074'
-    sr_test = '35221245495694001276590008047580969276482206'
+    db = database.SqliteDatabase()
+
     while True:
         access_key = input('Enter the CFEid: ')
-        if access_key == 'exit':
-            break
-        header_data, item_data = scrap_data(access_key) #_test
+        if len(access_key) != 44:
+            print('Chave invalida! ')
+            continue
+        if db.exists_key(access_key):
+            print('Chave já foi utilizada!')
+            continue
+        try:
+            header_data, item_data = scrap_data(access_key)
+        except NoSuchElementException as ex:
+            print(f'Erro.CFE não encontrado. {ex}')
+            continue
 
         cfe_header_data = get_cfe_header_data(header_data, access_key)
         cfe_item_data = get_cfe_item_data(item_data)
 
         header_data_adjusted = adjust_cfe_header_data(cfe_header_data)
         item_data_adjusted = adjust_cfe_item_data(cfe_item_data)
-        database.save_data(header_data_adjusted, item_data_adjusted)
-        print(header_data_adjusted)
-        print('='*80)
-        print(item_data_adjusted)
 
+        idh = db.insert_header(header_data_adjusted)
+        idi = db.insert_item(idh, item_data_adjusted)
+        print(f'Record ID {idh}, {idi} saved!')
+ 
 if __name__ == '__main__':
     main()
