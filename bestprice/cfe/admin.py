@@ -43,7 +43,8 @@ class ItemAdminForm(forms.ModelForm):
     purchase
     liquid_price
     aditional_info
-    gtin_code"""
+    gtin_code
+    """
 
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm

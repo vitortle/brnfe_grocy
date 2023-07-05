@@ -5,3 +5,5 @@ requests
 pymongo
 python-dotenv
 django==4.1.7
+lxml
+psycopg2-binary
