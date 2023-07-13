@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from selenium.common.exceptions import NoSuchElementException
 from database import db_adapters
 from api import product_api
+import bestbrowser
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -52,36 +53,11 @@ def get_captcha(browser, iframes):
     save_captcha_images(imgs_src)
 
 
-class Scrape:
-    def __init__(self, browser):
-        self.browser = browser
-
-    def click(self, xpath):
-        html_object = self.browser.find_element(By.XPATH,xpath)
-        html_object.click()
-
-    def send_keys(self, xpath, keys):
-        html_object = self.browser.find_element(By.XPATH,xpath)
-        html_object.send_keys(keys)
-
-def scrap_data(cfe_key:str)-> str:
-    options = ChromeOptions()
-    options.add_argument('--ignore-ssl-errors=yes')
-    options.add_argument('--ignore-certificate-errors') 
-   
-    # for os with no GUI
-    # options.add_argument("--headless")
-
-    options.add_experimental_option("detach", True)
-
-    browser = webdriver.Chrome(options=options)
-
-    # go to cfe site, type the key and click the button
-    browser.get('https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx')
+def scrap_data(cfe_key:str, browser)-> str:
+    
     text_field = browser.find_element(By.XPATH,'/html/body/div[1]/form/div[3]/div[2]/div[2]/table/tbody/tr[2]/td[2]/div[2]/div[1]/div[1]/div[1]/input')
     text_field.click()
     text_field.send_keys(cfe_key)
-
     # find the 3 iframes:1-Im not a robot, 3- captcha
     iframes = browser.find_elements(By.TAG_NAME, "iframe")
 
@@ -247,6 +223,7 @@ def main():
         8- if not, call product api and save data on product table.
         9- insert item data.
     """
+
     #db = database.SqliteDatabase('/home/rogerio/sources/bestprice/bestprice/db.sqlite3')
     conn_string = f"postgres://{os.environ.get('SQL_DATABASE')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_USER')}"
     db = db_adapters.PostgresDatabase(conn_string)
@@ -255,12 +232,16 @@ def main():
         if not is_key_valid(access_key) or is_key_used(access_key, db):
             continue
         try:
-            header_data, item_data = scrap_data(access_key)
+            browser = bestbrowser.Browser().browser
+            browser.get('https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx')
+            header_data, item_data = scrap_data(access_key, browser)
         except NoSuchElementException as ex:
             print(f'Erro.CFE não encontrado. {ex}')
+            browser.close()
             continue
         except Exception as ex:
             print(f'Erro inesperado: {ex}')
+            browser.close()
             continue
         
         cfe_header_data = get_cfe_header_data(header_data, access_key)

@@ -9,9 +9,7 @@ def get_data_for_gtin(gtin):
     }
     url = f'https://api.cosmos.bluesoft.com.br/gtins/{gtin}.json'
     response = requests.get(url, headers=headers, allow_redirects=False).content
-    print('RESPONSE: ',response)
     response = response.replace(b'null', b'"None"')
     json_response = json.loads(response)
-    print('RESPONSE', json_response)
     return json_response
 

@@ -1,6 +1,6 @@
 import logging
 import json
-
+import psycopg2
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +67,13 @@ def insert_item(header_id, data_list:list, conn)-> int:
 def is_product_on_db(gtin:str, conn) -> bool:
     cursor = conn.cursor()
     query = f"SELECT 1 FROM cfe_product WHERE gtin = '{gtin}'"
-    cursor.execute(query)
-    return cursor.fetchone()
+    try:
+        cursor.execute(query)
+    except Exception as ex:
+        logger.error(ex)
+        return False
+    response = cursor.fetchone()
+    return response
 
 def insert_product_json(gtin, product_data:dict, conn)-> int:
     """
@@ -93,7 +98,14 @@ def insert_product(item_data:dict, product_api, conn):
         gtin = item['gtin_code']
         if is_gtin_valid(gtin) and not is_product_on_db(gtin, conn):
             logger.info(f'API call for get product for {gtin}...')
-            product_data = product_api.get_data_for_gtin(gtin)
             # insert data related to product
-            product_id = insert_product_json(gtin, product_data, conn)
-            logger.info(f'Produto {product_id} inserido!')
+            try:
+                product_data = product_api.get_data_for_gtin(gtin)
+                product_id = insert_product_json(gtin, product_data, conn)
+                logger.info(f'Produto {product_id} inserido!')
+            except (psycopg2.errors.InvalidTextRepresentation, psycopg2.errors.InFailedSqlTransaction) as ex:
+                logger.warning(f'Produto {item} não foi inserido. {ex}')
+                continue
+            except Exception as ex:
+                logger.exception(f'Produto {item} não foi inserido devido a um erro não esperado: {ex}')
+                continue
