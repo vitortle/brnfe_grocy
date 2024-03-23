@@ -1,6 +1,9 @@
 import logging
 import json
+
 import psycopg2
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -81,12 +84,13 @@ def insert_product_json(gtin, product_data:dict, conn)-> int:
     """
     cursor = conn.cursor()
     query = f"insert into public.cfe_product(data, gtin) values('{ json.dumps(product_data)}', '{gtin}'::jsonb) RETURNING id"
+    print(query)
     cursor.execute(query)
     inserted_id = cursor.fetchone()[0]
     conn.commit()
     return inserted_id
 
-def insert_product(item_data:dict, product_api, conn):
+def insert_products(item_data:dict, product_api, conn):
     """
         Checks the just inserted items for new products. 
         If there is a new product on items table, insert on products.
@@ -95,12 +99,20 @@ def insert_product(item_data:dict, product_api, conn):
         return gtin.isnumeric()
     
     for item in item_data:
-        gtin = item['gtin_code']
+        print('Inserting: ', item)
+        try:
+            gtin = item['gtin_code']
+        except:
+            gtin = item
         if is_gtin_valid(gtin) and not is_product_on_db(gtin, conn):
             logger.info(f'API call for get product for {gtin}...')
             # insert data related to product
             try:
                 product_data = product_api.get_data_for_gtin(gtin)
+                print('****', json.dumps(product_data))
+                if json.dumps(product_data) == '{"message": "Limite de requests excedido"}':
+                    raise Exception('Limite de chamadas da API for excedido.')
+                
                 product_id = insert_product_json(gtin, product_data, conn)
                 logger.info(f'Produto {product_id} inserido!')
             except (psycopg2.errors.InvalidTextRepresentation, psycopg2.errors.InFailedSqlTransaction) as ex:

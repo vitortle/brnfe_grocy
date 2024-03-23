@@ -1,5 +1,8 @@
 import os
+import sys
+import logging
 
+import selenium
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium import webdriver
@@ -7,6 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
 class Browser:
 
@@ -19,13 +23,20 @@ class Browser:
         options.add_argument('--ignore-ssl-errors=yes')
         options.add_argument('--ignore-certificate-errors=yes') 
         options.add_argument('--window-size=1920,1080')
+        
         prefs = {"download.default_directory" : self.download_path}
         # for os with no GUI
         # options.add_argument("--headless")
 
         options.add_experimental_option("detach", True)
         options.add_experimental_option("prefs",prefs)
-        self.browser = webdriver.Chrome(options=options)
+        try:
+            self.browser = webdriver.Chrome('/usr/local/bin/chromedriver', service_args=['--verbose', '--log-path=./chrome_drv.log'], options=options)
+        except selenium.common.exceptions.SessionNotCreatedException as ex:
+            logger.error(f'Browser desatualizado. Por favor atualizar seu Chrome para a versão 115! {ex}')
+            sys.exit(1)
+        except Exception as ex:
+            logger.error(ex)
 
     def get(self, url):
         self.browser.get(url)

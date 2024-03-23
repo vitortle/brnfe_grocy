@@ -70,10 +70,10 @@ def scrap_data(cfe_key:str, browser)-> str:
     # wait for the captcha to be solved
     input('Press enter when data is being showed!')
 
+    browser.switch_to.parent_frame()
+
     # click on Detail button
     detail_button = browser.find_element(By.ID,'conteudo_btnDetalhe')
-   
-        
     detail_button.click()
 
     # click on emitente
@@ -223,10 +223,8 @@ def main():
         8- if not, call product api and save data on product table.
         9- insert item data.
     """
-
-    #db = database.SqliteDatabase('/home/rogerio/sources/bestprice/bestprice/db.sqlite3')
-    conn_string = f"postgres://{os.environ.get('SQL_DATABASE')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_USER')}"
-    db = db_adapters.PostgresDatabase(conn_string)
+    
+    db = db_adapters.PostgresDatabase()
     while True:
         access_key = input('Enter the CFEid: ')
         if not is_key_valid(access_key) or is_key_used(access_key, db):
@@ -253,7 +251,7 @@ def main():
         idh = db.insert_header(header_data_adjusted)
         idi = db.insert_item(idh, item_data_adjusted)
 
-        idp = db.insert_product(item_data_adjusted, product_api)
+        idp = db.insert_products(item_data_adjusted, product_api)
         
 
         print(f'Record ID {idh}, {idi} saved!')

@@ -14,9 +14,15 @@ this adapter should folow PEP 249 – Python Database API Specification v2.0
 https://peps.python.org/pep-0249/
 """
 
+
+
 class SqliteDatabase:
     def __init__(self, db_filepath):
         self.db = db_filepath
+
+    def get_db_filepath(self):
+        db = database.SqliteDatabase('/home/rogerio/sources/bestprice/bestprice/db.sqlite3')
+        return db
 
     def exists_key(self, key):
         with sqlite3.connect(self.db) as conn:
@@ -48,9 +54,13 @@ class MongoDatabase:
     
 
 class PostgresDatabase:
-    def __init__(self, connection_string):
-        self.db = connection_string
+    def __init__(self):
+        self.db = self.get_connection_string()
 
+    def get_connection_string(self):
+        conn_string = f"postgres://{os.environ.get('SQL_DATABASE')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_USER')}"
+        return conn_string
+    
     def exists_key(self, key):
         with psycopg2.connect(self.db) as conn:
             return operations.exists_key(key, conn)
@@ -71,6 +81,6 @@ class PostgresDatabase:
         with psycopg2.connect(self.db) as conn:
             return operations.insert_product_json(data, conn)
         
-    def insert_product(self, data, product_api):
+    def insert_products(self, data, product_api):
         with psycopg2.connect(self.db) as conn:
-            return operations.insert_product(data, product_api, conn)
+            return operations.insert_products(data, product_api, conn)
