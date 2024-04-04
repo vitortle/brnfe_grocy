@@ -1,5 +1,5 @@
 from api import product_api
-from database import db_adapters
+from .database import db_adapters
 import dotenv
 
 

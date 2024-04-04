@@ -109,3 +109,33 @@ from (
 	group by gtin_code
 --where gtin_code = '0000000008105'
 
+--API get best price per place
+with last_price as (
+select distinct h.place_name, i.gtin_code, max(h.purchase_date) as date
+from public.cfe_header h
+inner join public.cfe_item i on h.id = purchase_id
+group by place_name, gtin_code
+order by gtin_code, place_name
+)
+
+select distinct h.place_name, i.gtin_code,p.data->'description' as description, i.unit_price, h.purchase_date
+from public.cfe_header h
+inner join public.cfe_item i on h.id = purchase_id
+left join public.cfe_product p on i.gtin_code = p.gtin
+inner join last_price l on l.place_name=h.place_name and l.date=h.purchase_date and l.gtin_code=i.gtin_code
+
+--Postgres to pydantic attempt
+SELECT
+	concat ('class', ' ', table_name),
+    concat(column_name , ' : ', 
+			  case 
+				  when data_type in ('text', 'character varying', 'name') then case when is_nullable='YES' then 'str | None' else 'str' end
+				  when data_type in ('double precision','numeric') then case when is_nullable='YES' then 'float | None' else 'float' end
+				  when data_type in ('integer','bigint','','') then case when is_nullable='YES' then 'int | None' else 'int' end
+			  	  when data_type in ('boolean','','') then case when is_nullable='YES' then 'bool | None' else 'bool' end 
+		   		  when data_type in ('timestamp with time zone', '') then case when is_nullable='YES' then 'bool | None' else 'bool' end 
+			  end
+			 ), data_type
+FROM
+    information_schema.columns
+order by table_name

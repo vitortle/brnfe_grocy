@@ -14,9 +14,11 @@ import sys
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import NoSuchElementException
-from database import db_adapters
-from api import product_api
+import database.db_adapters as db_adapters
+from product_api import product_api
 import bestbrowser
+from database import operations
+
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -204,9 +206,9 @@ def is_key_valid(access_key):
         valid = False
     return valid
 
-def is_key_used(access_key, db):
+def is_key_used(access_key):
     used = False
-    if db.exists_key(access_key):
+    if operations.exists_key(access_key):
         print('Chave já foi utilizada!')
         used = True
     return used
@@ -227,7 +229,7 @@ def main():
     db = db_adapters.PostgresDatabase()
     while True:
         access_key = input('Enter the CFEid: ')
-        if not is_key_valid(access_key) or is_key_used(access_key, db):
+        if not is_key_valid(access_key) or is_key_used(access_key):
             continue
         try:
             browser = bestbrowser.Browser().browser
@@ -248,10 +250,10 @@ def main():
         header_data_adjusted = adjust_cfe_header_data(cfe_header_data)
         item_data_adjusted = adjust_cfe_item_data(cfe_item_data)
 
-        idh = db.insert_header(header_data_adjusted)
-        idi = db.insert_item(idh, item_data_adjusted)
+        idh = operations.insert_header(header_data_adjusted)
+        idi = operations.insert_item(idh, item_data_adjusted)
 
-        idp = db.insert_products(item_data_adjusted, product_api)
+        idp = operations.insert_products(item_data_adjusted, product_api)
         
 
         print(f'Record ID {idh}, {idi} saved!')
