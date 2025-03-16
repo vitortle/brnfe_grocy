@@ -1,6 +1,8 @@
-Clone of https://github.com/engrogerio/bestprice.
+Fork of https://github.com/engrogerio/bestprice.
 
 This project will create an integrate with Grocy app at some point.
+
+For now, it's working to scrape the data from the Cupom Fiscal Eletronico. 
 
 # 1 - Install the browser driver.
 Make sure you have driver and browser on the same version.
