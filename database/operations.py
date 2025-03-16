@@ -4,6 +4,8 @@ import json
 import psycopg2
 from .db_adapters import PostgresDatabase
 
+import os
+
 db = PostgresDatabase().db
 
 logger = logging.getLogger(__name__)
@@ -126,3 +128,4 @@ def insert_products(item_data:dict, product_api):
             except Exception as ex:
                 logger.exception(f'Produto {item} não foi inserido devido a um erro não esperado: {ex}')
                 continue
+

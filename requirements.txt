@@ -1,9 +1,8 @@
-selenium
-pandas
-BeautifulSoup4
-requests
-pymongo
-python-dotenv
-django==4.1.7
-lxml
-psycopg2-binary
+pip install selenium
+pip install pandas
+pip install BeautifulSoup4
+pip install requests
+pip install pymongo
+pip install python-dotenv
+pip install django==4.1.7
+pip install lxml

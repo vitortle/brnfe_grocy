@@ -1,0 +1,7 @@
+[ERROR] [2025-03-09 18:04:38,080] {bestbrowser.py:39} - WebDriver.__init__() got an unexpected keyword argument 'service_args'
+[ERROR] [2025-03-09 18:18:46,072] {bestbrowser.py:39} - WebDriver.__init__() got an unexpected keyword argument 'service_args'
+[ERROR] [2025-03-15 14:32:22,293] {bestbrowser.py:59} - WebDriver.__init__() got an unexpected keyword argument 'desired_capabilities'
+[ERROR] [2025-03-15 14:32:33,859] {bestbrowser.py:59} - WebDriver.__init__() got an unexpected keyword argument 'desired_capabilities'
+[ERROR] [2025-03-15 14:33:07,926] {bestbrowser.py:59} - WebDriver.__init__() got an unexpected keyword argument 'desired_capabilities'
+[ERROR] [2025-03-15 14:33:35,325] {bestbrowser.py:59} - WebDriver.__init__() got an unexpected keyword argument 'desired_capabilities'
+[INFO] [2025-03-16 10:31:02,620] {nfe.py:218} - Data inserted into Mongo

@@ -6,48 +6,27 @@ import psycopg2
 #from database import operations
 
 dotenv.load_dotenv()
-username = os.getenv('USERNAME')
-password = os.getenv('PASSWD')
+mongo_username = os.getenv('MONGO_USERNAME')
+mongo_password = os.getenv('MONGO_PASSWD')
+mongo_host = os.getenv('MONGO_HOST')
 
 """
 this adapter should folow PEP 249 – Python Database API Specification v2.0
 https://peps.python.org/pep-0249/
 """
 
-
-class SqliteDatabase:
-    def __init__(self, db_filepath):
-        self.db = db_filepath
-
-    def get_db_filepath(self):
-        db = database.SqliteDatabase('/home/rogerio/sources/bestprice/bestprice/db.sqlite3')
-        return db
-
-    def exists_key(self, key):
-        with sqlite3.connect(self.db) as conn:
-            return operations.exists_key(key, conn)
-
-    def insert_header(self, data):
-        with sqlite3.connect(self.db) as conn:
-            return operations.insert_header(data, conn)
-
-    def insert_item(self, header_id, data_list):
-        with sqlite3.connect(self.db) as conn:
-            return operations.insert_item(header_id, data_list, conn)
-
-
 class MongoDatabase:
     def __init__(self):
-        client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@bestprice.uizfzp3.mongodb.net/?retryWrites=true&w=majority", 
-                                    ) #server_api=ServerApi('1'))
-        db = client["bestprice"]
-        self.collection = db["bpcollection"]
+        client = pymongo.MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}") #server_api=ServerApi('1'))
+        db = client["documents"]
+        self.collection = db["nf"]
 
     def insert_dict(self, data:dict)-> int:
 
         # insert the dictionary into the collection
         result = self.collection.insert_one(data)
 
+        
         # print the ID of the inserted document
         return result.inserted_id
     
@@ -57,7 +36,12 @@ class PostgresDatabase:
         self.db = self.get_connection_string()
 
     def get_connection_string(self):
-        conn_string = f"postgres://{os.environ.get('SQL_DATABASE')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_USER')}"
+        #conn_string = f"postgres://{os.environ.get('SQL_DATABASE')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_USER')}"
+        conn_string = f"postgresql://{os.environ.get('SQL_USER')}:{os.environ.get('SQL_PASSWORD')}@{os.environ.get('SQL_HOST')}/{os.environ.get('SQL_DATABASE')}"
+                        #postgres://localhost:5432/meu_banco
+                        #postgresql://user:password@localhost/mydatabase
+
+
         return conn_string
     
     # def exists_key(self, key):

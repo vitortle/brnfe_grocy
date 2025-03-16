@@ -1,3 +1,7 @@
+Clone of https://github.com/engrogerio/bestprice.
+
+This project will create an integrate with Grocy app at some point.
+
 # 1 - Install the browser driver.
 Make sure you have driver and browser on the same version.
 
@@ -18,4 +22,3 @@ export PATH="/usr/bin/chrome-linux64/:$PATH"
 
 ## 3- CFE manual 
 https://www.confaz.fazenda.gov.br/legislacao/arquivo-manuais/especificacao-tecnica-de-requisitos-2_24_04.pdf
-
